@@ -17,8 +17,13 @@
 #include <Damper.h>
 #include <Wind.h>
 
+#include <Facet.h>
+
+#include <Camera.h>
+
 #include <GL/gl.h>
 #include <GL/glut.h>
+#include <GL/glfw.h>
 
 #include <G3Xall.h>
 
@@ -50,9 +55,102 @@ double beta = 0.001;
 double k = alpha * Fe * Fe;
 double z = beta * Fe;
 
+Camera camera;
 
 std::vector<PMat*> pMats;
 std::vector<Link*> links;
+std::vector<Facet*> facets;
+
+struct GUIStates
+{
+    bool panLock;
+    bool turnLock;
+    bool zoomLock;
+    int lockPositionX;
+    int lockPositionY;
+    int camera;
+    double time;
+    bool playing;
+    static const float MOUSE_PAN_SPEED;
+    static const float MOUSE_ZOOM_SPEED;
+    static const float MOUSE_TURN_SPEED;
+};
+const float GUIStates::MOUSE_PAN_SPEED = 0.001f;
+const float GUIStates::MOUSE_ZOOM_SPEED = 0.05f;
+const float GUIStates::MOUSE_TURN_SPEED = 0.005f;
+
+GUIStates guiStates;
+
+void init_gui_states(GUIStates & guiStates)
+{
+    guiStates.panLock = false;
+    guiStates.turnLock = false;
+    guiStates.zoomLock = false;
+    guiStates.lockPositionX = 0;
+    guiStates.lockPositionY = 0;
+    guiStates.camera = 0;
+    guiStates.time = 0.0;
+    guiStates.playing = false;
+}
+
+/* Camera */
+void handleMouvements() {
+  // Mouse states
+  int leftButton = glfwGetMouseButton( GLFW_MOUSE_BUTTON_LEFT );
+  int rightButton = glfwGetMouseButton( GLFW_MOUSE_BUTTON_RIGHT );
+  int middleButton = glfwGetMouseButton( GLFW_MOUSE_BUTTON_MIDDLE );
+
+  if( leftButton == GLFW_PRESS )
+    guiStates.turnLock = true;
+  else
+    guiStates.turnLock = false;
+
+  if( rightButton == GLFW_PRESS )
+    guiStates.zoomLock = true;
+  else
+    guiStates.zoomLock = false;
+
+  if( middleButton == GLFW_PRESS )
+    guiStates.panLock = true;
+  else
+    guiStates.panLock = false;
+    
+  std::cout << "Turn: " << guiStates.turnLock << std::endl;
+  std::cout << "Zoom: " << guiStates.zoomLock << std::endl;
+  std::cout << "Pan: " << guiStates.panLock << std::endl;
+
+  // Camera movements
+  int altPressed = glfwGetKey(GLFW_KEY_LSHIFT);
+  if (!altPressed && (leftButton == GLFW_PRESS || rightButton == GLFW_PRESS || middleButton == GLFW_PRESS)) {
+    std::cout << "GELLO" << std::endl;
+    int x; int y;
+    glfwGetMousePos(&x, &y);
+    guiStates.lockPositionX = x;
+    guiStates.lockPositionY = y;
+  }
+  if (altPressed == GLFW_PRESS) {
+    int mousex; int mousey;
+    glfwGetMousePos(&mousex, &mousey);
+    int diffLockPositionX = mousex - guiStates.lockPositionX;
+    int diffLockPositionY = mousey - guiStates.lockPositionY;
+    if (guiStates.zoomLock) {
+      float zoomDir = 0.0;
+      if (diffLockPositionX > 0)
+        zoomDir = -1.f;
+      else if (diffLockPositionX < 0 )
+        zoomDir = 1.f;
+      camera.zoom(zoomDir * GUIStates::MOUSE_ZOOM_SPEED);
+    } else if (guiStates.turnLock) {
+      camera.turn(diffLockPositionY * GUIStates::MOUSE_TURN_SPEED,
+          diffLockPositionX * GUIStates::MOUSE_TURN_SPEED);
+    } else if (guiStates.panLock) {
+      camera.pan(diffLockPositionX * GUIStates::MOUSE_PAN_SPEED,
+        diffLockPositionY * GUIStates::MOUSE_PAN_SPEED);
+    }
+    guiStates.lockPositionX = mousex;
+    guiStates.lockPositionY = mousey;
+  }
+}
 
 /* Fonction d'animation */
 void Anim(void) {
@@ -75,6 +173,10 @@ static void Dessin(void) {
   for (std::vector<Link*>::const_iterator it = links.begin(); it != links.end(); ++it) {
     (*it)->draw();
   }
+  
+  for (std::vector<Facet*>::const_iterator it = facets.begin(); it != facets.end(); ++it) {
+    (*it)->draw();
+  }
 }
 
 /*=    ACTION A EXECUTER EN SORTIE   =*/
@@ -95,6 +197,8 @@ int main(int argc, char** argv) {
   g3x_SetPerspective(90.,100.,1.);
   /* position, orientation de la caméra */
   g3x_SetCameraSpheric(.5*PI, 0, 40., G3Xcoord(20, 0, 0));
+  
+  //init_gui_states(guiStates);
   
   /* fixe les param. colorimétriques du spot lumineux */
   /* lumiere blanche (c'est les valeurs par defaut)   */	
@@ -123,34 +227,17 @@ int main(int argc, char** argv) {
   int width = nbPart / height;
   
   for (int i = 0; i < nbPart; i++) {
-    PMat *p;
-
-    /* Cordelette */
-    //if (i == 0 /*|| i == 39*/) {
-    /*
-      p = new FixedPoint(G3Xpoint(i, 0, 0));
-    } else {
-      p = new Particle(1., G3Xpoint(i, 0, 0), NUL);
-    }
-    */
-    
+    PMat *p;   
     /* Flag */
     if (i < height) {
-      p = new FixedPoint(G3Xpoint(0, 0, 2 * i));
+      p = new FixedPoint(G3Xpoint(2 * i, 0, 0));
     } else {
-      p = new Particle(1., G3Xpoint(2 * (i / height), 0, 2 * (i % height)), NUL);
+      p = new Particle(1., G3Xpoint(2 * (i % height), 2 * (i / height), 0), NUL);
     }
 
     pMats.push_back(p);
   }
-  /* Cordelette */ /*
-  for (int i = 0; i < nbPart - 1; i++) {
-    HookSpring* hs = new HookSpring(k, pMats[i], pMats[i+1]);
-    Damper *d = new Damper(z, pMats[i], pMats[i+1]);
-    links.push_back(hs);
-    links.push_back(d);
-  }
-  */
+
 
   /* Flag */
   float kMin = 0.25 * k;
@@ -209,7 +296,11 @@ int main(int argc, char** argv) {
   
   // Vent
   Wind wind(G3Xvector(1, 1, 0), pMats.begin(), pMats.end());  
-  links.push_back(&wind);
+  //links.push_back(&wind);
+  
+  // Facet
+  Facet facet(G3Xpoint(0,0,0), G3Xpoint(1,1,1), G3Xpoint(0,1,0));
+  facets.push_back(&facet);  
 
   // Sortie du mode "stable"
   //(*pMats[20]).setPos(G3Xpoint(0, 0, 4));

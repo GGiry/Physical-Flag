@@ -15,18 +15,18 @@ else               #en mode normal
 endif
 
 # assemblage des infos de lib. et inc.
-lib = $(libG3X) $(libG3XPP)
+lib = -lglfw $(libG3X) $(libG3XPP)
 # fichiers *.c locaux
 src = src/
 Inc = include/
 # fichiers *.h locaux et lib.
-inc = -I./include $(incG3X) $(incG3XPP) 
+inc = -I./include $(incG3X) $(incG3XPP)
 
 exec = main
 
 all : $(exec)
 
-main: main.o PMat.o Particle.o FixedPoint.o Link.o HookSpring.o GlobalAction.o Damper.o Wind.o
+main: main.o PMat.o Particle.o FixedPoint.o Link.o HookSpring.o GlobalAction.o Damper.o Wind.o Camera.o Facet.o
 
 Link.o: $(src)Link.cpp $(Inc)Link.h PMat.o
 
@@ -43,6 +43,10 @@ Particle.o: $(src)Particle.cpp $(Inc)Particle.h PMat.o
 FixedPoint.o: $(src)FixedPoint.cpp $(Inc)FixedPoint.h PMat.o
 
 Wind.o: $(src)Wind.cpp $(Inc)Wind.h GlobalAction.o
+
+Camera.o: $(src)Camera.cpp $(Inc)Camera.h 
+
+Facet.o: $(src)Facet.cpp $(Inc)Facet.h Particle.o
 
 main.o: $(src)main.cpp
 
