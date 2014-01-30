@@ -15,7 +15,7 @@ else               #en mode normal
 endif
 
 # assemblage des infos de lib. et inc.
-lib = -lglfw $(libG3X) $(libG3XPP)
+lib = $(libG3X) $(libG3XPP)
 # fichiers *.c locaux
 src = src/
 Inc = include/
