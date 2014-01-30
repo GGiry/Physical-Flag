@@ -2,6 +2,8 @@
 
 #include <cmath>
 
+#include <cstdlib>
+
 #include <GL/gl.h>
 
 extern double h;
@@ -51,18 +53,30 @@ Facet::Facet(G3Xpoint A, G3Xpoint B, G3Xpoint C): _A(A), _B(B), _C(C), _normal(n
 
 
 G3Xvector createVector(G3Xpoint a, G3Xpoint p) {
-  return G3Xvector(a[0] - p[0], a[1] - p[1], a[2] - p[2]);
+  return G3Xvector(p[0] - a[0], p[1] - a[1], p[2] - a[2]);
+}
+
+bool approxEqual( float a, float b, float tolerance )
+{
+    return abs( a - b ) < tolerance;
+}
+
+bool sameDir(G3Xvector a, G3Xvector b, float tolerance )
+{
+    G3Xvector aUnit = normalize(a);
+    G3Xvector bUnit = normalize(b);
+    return approxEqual( scalar(aUnit, bUnit), 1.0f, tolerance);
 }
 
 
-void Facet::algo(Particle part) {
+void Facet::algo(const PMat &part) {
   G3Xpoint p = part.getPos();
   G3Xpoint q = p + part.getVit() * h;
   G3Xvector ap = createVector(_A, p);
   G3Xvector pq = createVector(p, q);
 
-  double e = 0.0000001;
- 
+  double e = 0.000001;
+
   double nap = scalar(_normal, ap);
   if (nap < e) {
     return;
@@ -74,11 +88,10 @@ void Facet::algo(Particle part) {
   }
   
   double u = - nap / npq;
-  
-  if (u >= 1) {
+  if (u > 1 || u < 0) {
     return;
   }
-  
+ 
   G3Xpoint m = p + pq * u;
   
   G3Xvector ma = createVector(m, _A);
@@ -88,6 +101,12 @@ void Facet::algo(Particle part) {
   G3Xvector mamb = dotProduct(ma, mb);
   G3Xvector mbmc = dotProduct(mb, mc);
   G3Xvector mcma = dotProduct(mc, ma);
+
+  if (!(sameDir(mamb, mbmc, 0.0001) && sameDir(mamb, mcma, 0.0001))) {
+    return;
+  }
+  
+  std::cout << "Collision" << std::endl;
 
   return;
 }

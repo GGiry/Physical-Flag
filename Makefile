@@ -46,7 +46,7 @@ Wind.o: $(src)Wind.cpp $(Inc)Wind.h GlobalAction.o
 
 Camera.o: $(src)Camera.cpp $(Inc)Camera.h 
 
-Facet.o: $(src)Facet.cpp $(Inc)Facet.h Particle.o
+Facet.o: $(src)Facet.cpp $(Inc)Facet.h PMat.o
 
 main.o: $(src)main.cpp
 

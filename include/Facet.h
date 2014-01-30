@@ -2,7 +2,7 @@
 #define FACET_H
 
 #include <G3Xcoord.h>
-#include <Particle.h>
+#include <PMat.h>
 
 class Facet {
   private:
@@ -12,7 +12,7 @@ class Facet {
   public:
     Facet(G3Xpoint, G3Xpoint, G3Xpoint);
 
-    void algo(Particle);
+    void algo(const PMat &);
     void draw(void) const;
 };
 

@@ -66,6 +66,12 @@ void Anim(void) {
   for (std::vector<Link*>::const_iterator it = links.begin(); it != links.end(); ++it) {
     (*it)->algo();
   }
+  
+  for (std::vector<Facet*>::const_iterator itF = facets.begin(); itF != facets.end(); ++itF) {
+    for (std::vector<PMat*>::const_iterator itP = pMats.begin(); itP != pMats.end(); ++itP) {
+      (*itF)->algo(**itP);
+    }
+  }
 }
 
 /*= FONCTION DE DESSIN PRINCIPALE =*/
@@ -125,9 +131,9 @@ int main(int argc, char** argv) {
   g3x_SetDrawFunction(Dessin);     /*  la fonction de Dessin  */
   g3x_SetAnimFunction(Anim);       /* la fonction d'animation */
 
-  int nbPart = 22*14;
+  int nbPart = 12*10;
 
-  int height = 14;  
+  int height = 10;  
   int width = nbPart / height;
   
   for (int i = 0; i < nbPart; i++) {
@@ -203,7 +209,7 @@ int main(int argc, char** argv) {
   //links.push_back(&wind);
   
   // Facet
-  Facet facet(G3Xpoint(10,0,-20), G3Xpoint(20,0,-25), G3Xpoint(15,0,-10));
+  Facet facet(G3Xpoint(20,0,-25), G3Xpoint(10,0,-20), G3Xpoint(15,0,-10));
   facets.push_back(&facet);  
 
   // Sortie du mode "stable"
