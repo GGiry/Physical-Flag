@@ -47,7 +47,7 @@ G3Xvector normalize(G3Xvector v) {
 }
 
 
-Facet::Facet(G3Xpoint A, G3Xpoint B, G3Xpoint C): _A(A), _B(B), _C(C), _normal(normalize(dotProduct(A, B, C))) {
+Facet::Facet(G3Xpoint A, G3Xpoint B, G3Xpoint C, double alpha, double beta): _A(A), _B(B), _C(C), _normal(normalize(dotProduct(A, B, C))), _alpha(alpha), _beta(beta) {
   
 }
 
@@ -69,9 +69,10 @@ bool sameDir(G3Xvector a, G3Xvector b, float tolerance )
 }
 
 
-void Facet::algo(const PMat &part) {
+void Facet::algo(PMat &part) {
   G3Xpoint p = part.getPos();
-  G3Xpoint q = p + part.getVit() * h;
+  G3Xvector v = part.getVit();
+  G3Xpoint q = p + v * h;
   G3Xvector ap = createVector(_A, p);
   G3Xvector pq = createVector(p, q);
 
@@ -91,9 +92,9 @@ void Facet::algo(const PMat &part) {
   if (u > 1 || u < 0) {
     return;
   }
- 
+
   G3Xpoint m = p + pq * u;
-  
+
   G3Xvector ma = createVector(m, _A);
   G3Xvector mb = createVector(m, _B);
   G3Xvector mc = createVector(m, _C);
@@ -106,7 +107,34 @@ void Facet::algo(const PMat &part) {
     return;
   }
   
-  std::cout << "Collision" << std::endl;
+  G3Xvector f = part.getFrc();
+  G3Xvector fn = _normal * scalar(f, _normal);
+  G3Xvector ft = f - fn;
+  
+  G3Xvector vn = _normal * scalar(v, _normal);
+  G3Xvector vt = v - vn;
+  
+  double normFt = norm(ft);
+  double normFn = norm(fn);
+  
+  double normVt = norm(vt);
+  double normVn = norm(vn);
+  
+  if (normFt < _beta * normFn) {
+    f = fn * (-_alpha);
+  } else {
+    f = fn * (-_alpha) + ft * (1 - _beta * normFn / normFt);
+  }
+  
+  if (normVt < _beta * normVn) {
+    v = vn * (-_alpha);
+  } else {
+    v = vn * (-_alpha) + vt * (1 - _beta * normFn / normFt);
+  }
+  
+  part.setFrc(f);
+  part.setVit(v);
+  
 
   return;
 }

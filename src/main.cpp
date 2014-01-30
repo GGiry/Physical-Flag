@@ -209,7 +209,7 @@ int main(int argc, char** argv) {
   //links.push_back(&wind);
   
   // Facet
-  Facet facet(G3Xpoint(20,0,-25), G3Xpoint(10,0,-20), G3Xpoint(15,0,-10));
+  Facet facet(G3Xpoint(20,0,-25), G3Xpoint(10,0,-20), G3Xpoint(15,0,-10), 1., 1.);
   facets.push_back(&facet);  
 
   // Sortie du mode "stable"

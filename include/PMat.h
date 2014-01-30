@@ -16,7 +16,15 @@ class PMat {
     PMat(const PMat&);
     const G3Xpoint& getPos() const;
     const G3Xvector& getVit() const;
+    const G3Xvector& getFrc() const;
     void setPos(G3Xpoint);
+    void setVit(G3Xvector& v) {
+      _vit = v;
+    }
+    void setFrc(G3Xvector& v) {
+      _frc = v;
+    }
+    
     void updateFrc(G3Xvector);
     
     virtual void algo();

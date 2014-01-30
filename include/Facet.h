@@ -9,10 +9,12 @@ class Facet {
   G3Xpoint _A, _B, _C;
   G3Xvector _normal;
   
+  double _alpha, _beta;
+  
   public:
-    Facet(G3Xpoint, G3Xpoint, G3Xpoint);
+    Facet(G3Xpoint, G3Xpoint, G3Xpoint, double, double);
 
-    void algo(const PMat &);
+    void algo(PMat &);
     void draw(void) const;
 };
 

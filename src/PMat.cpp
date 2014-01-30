@@ -29,6 +29,10 @@ const G3Xvector& PMat::getVit() const {
   return _vit;
 }
 
+const G3Xvector& PMat::getFrc() const {
+  return _frc;
+}
+
 void PMat::updateFrc(G3Xvector vector) {
   _frc += vector;
 }
