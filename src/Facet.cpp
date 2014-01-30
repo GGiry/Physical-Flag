@@ -4,11 +4,28 @@
 
 #include <GL/gl.h>
 
+extern double h;
+
+// Produit scalaire
+// define G3Xprodscal(U,V)    ((U)[0]*(V)[0]+(U)[1]*(V)[1]+(U)[2]*(V)[2])
+double scalar(G3Xvector u, G3Xvector v) {
+  return u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+}
+
+// Produit vectoriel
 G3Xvector dotProduct(G3Xpoint &A, G3Xpoint &B, G3Xpoint &C) {
   double a,b,c;
   a = (B[1] - A[1]) * (C[2] - A[2]) - (B[2] - A[2]) * (C[1] - A[1]);
   b = (B[2] - A[2]) * (C[0] - A[0]) - (B[0] - A[0]) * (C[2] - A[2]);
   c = (B[0] - A[0]) * (C[1] - A[1]) - (B[1] - A[1]) * (C[0] - A[0]);
+  return G3Xvector((const double) a, (const double) b, (const double) c);
+}
+
+G3Xvector dotProduct(G3Xvector &u, G3Xvector &v) {
+  double a,b,c;
+  a = u[1] * v[2] - u[2] * v[1];
+  b = u[2] * v[0] - u[0] * v[2];
+  c = u[0] * v[1] - u[1] * v[0];
   return G3Xvector((const double) a, (const double) b, (const double) c);
 }
 
@@ -33,9 +50,46 @@ Facet::Facet(G3Xpoint A, G3Xpoint B, G3Xpoint C): _A(A), _B(B), _C(C), _normal(n
 }
 
 
+G3Xvector createVector(G3Xpoint a, G3Xpoint p) {
+  return G3Xvector(a[0] - p[0], a[1] - p[1], a[2] - p[2]);
+}
 
-void Facet::algo(Particle p) {
+
+void Facet::algo(Particle part) {
+  G3Xpoint p = part.getPos();
+  G3Xpoint q = p + part.getVit() * h;
+  G3Xvector ap = createVector(_A, p);
+  G3Xvector pq = createVector(p, q);
+
+  double e = 0.0000001;
+ 
+  double nap = scalar(_normal, ap);
+  if (nap < e) {
     return;
+  }
+  
+  double npq = scalar(_normal, pq);
+  if (npq > e) {
+    return;
+  }
+  
+  double u = - nap / npq;
+  
+  if (u >= 1) {
+    return;
+  }
+  
+  G3Xpoint m = p + pq * u;
+  
+  G3Xvector ma = createVector(m, _A);
+  G3Xvector mb = createVector(m, _B);
+  G3Xvector mc = createVector(m, _C);
+
+  G3Xvector mamb = dotProduct(ma, mb);
+  G3Xvector mbmc = dotProduct(mb, mc);
+  G3Xvector mcma = dotProduct(mc, ma);
+
+  return;
 }
 
 void Facet::draw(void) const {
