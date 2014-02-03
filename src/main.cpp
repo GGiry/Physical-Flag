@@ -59,10 +59,6 @@ std::vector<Facet*> facets;
 /* Fonction d'animation */
 void Anim(void) {
   g3x_SetRefreshFreq(FAFF);
-  for (std::vector<PMat*>::const_iterator it = pMats.begin(); it != pMats.end(); ++it) {
-    (*it)->algo();
-  }
-  
   for (std::vector<Link*>::const_iterator it = links.begin(); it != links.end(); ++it) {
     (*it)->algo();
   }
@@ -71,6 +67,10 @@ void Anim(void) {
     for (std::vector<PMat*>::const_iterator itP = pMats.begin(); itP != pMats.end(); ++itP) {
       (*itF)->algo(**itP);
     }
+  }
+  
+  for (std::vector<PMat*>::const_iterator it = pMats.begin(); it != pMats.end(); ++it) {
+    (*it)->algo();
   }
 }
 
@@ -94,7 +94,7 @@ static void Dessin(void) {
 /*= -> utilise la pile de <atexit()> =*/
 static void Exit(void)
 {
-  // TODO
+  // TODO ?
 	std::cout << std::endl << "bye !" << std::endl;
 }
 
@@ -131,23 +131,21 @@ int main(int argc, char** argv) {
   g3x_SetDrawFunction(Dessin);     /*  la fonction de Dessin  */
   g3x_SetAnimFunction(Anim);       /* la fonction d'animation */
 
-  int nbPart = 12*10;
+  int height = 24;
+  int width = 24;
+  int nbPart = height * width;
 
-  int height = 10;  
-  int width = nbPart / height;
-  
   for (int i = 0; i < nbPart; i++) {
     PMat *p;   
-    /* Flag */
     if (i < height) {
-      p = new FixedPoint(G3Xpoint(2 * i, 0, 0));
+      //p = new FixedPoint(G3Xpoint(2 * i, 0, 0));
+      p = new Particle(1., G3Xpoint(1 * i, 0, 0), NUL);
     } else {
-      p = new Particle(1., G3Xpoint(2 * (i % height), 2 * (i / height), 0), NUL);
+      p = new Particle(1., G3Xpoint(1 * (i % height), 1 * (i / height), 0), NUL);
     }
 
     pMats.push_back(p);
   }
-
 
   /* Flag */
   float kMin = 0.25 * k;
@@ -208,12 +206,91 @@ int main(int argc, char** argv) {
   Wind wind(G3Xvector(1, 1, 0), pMats.begin(), pMats.end());  
   //links.push_back(&wind);
   
-  // Facet
-  Facet facet(G3Xpoint(20,0,-25), G3Xpoint(10,0,-20), G3Xpoint(15,0,-10), 1., 1.);
-  facets.push_back(&facet);  
-
-  // Sortie du mode "stable"
-  //(*pMats[20]).setPos(G3Xpoint(0, 0, 4));
+  // Facets
+  double positionX = 10;
+  double positionY = 10;
+  double positionZ = -10;
+  double tailleX = 5;
+  double tailleY = 5;
+  double tailleZ = 5;
   
+  double a = 0.5, b = 0.01;
+  
+  /* Pyramide, base carrée */
+  /*
+  Facet facet1(G3Xpoint(positionX + tailleX, positionY + tailleY, positionZ), 
+               G3Xpoint(positionX + tailleX, positionY - tailleY, positionZ), 
+               G3Xpoint(positionX - tailleX, positionY - tailleY, positionZ),
+               a, b);
+  
+  Facet facet2(G3Xpoint(positionX - tailleX, positionY + tailleY, positionZ), 
+               G3Xpoint(positionX + tailleX, positionY + tailleY, positionZ), 
+               G3Xpoint(positionX - tailleX, positionY - tailleY, positionZ),
+               a, b);
+  
+  Facet facet3(G3Xpoint(positionX + tailleX, positionY + tailleY, positionZ), 
+               G3Xpoint(positionX - tailleX, positionY + tailleY, positionZ), 
+               G3Xpoint(positionX, positionY, positionZ + tailleZ),
+               a, b);
+  
+  Facet facet4(G3Xpoint(positionX + tailleX, positionY + tailleY, positionZ), 
+               G3Xpoint(positionX, positionY, positionZ + tailleZ),
+               G3Xpoint(positionX + tailleX, positionY - tailleY, positionZ),
+               a, b);
+  
+  Facet facet5(G3Xpoint(positionX + tailleX, positionY - tailleY, positionZ), 
+               G3Xpoint(positionX, positionY, positionZ + tailleZ),
+               G3Xpoint(positionX - tailleX, positionY - tailleY, positionZ),
+               a, b);
+
+  Facet facet6(G3Xpoint(positionX - tailleX, positionY + tailleY, positionZ), 
+               G3Xpoint(positionX - tailleX, positionY - tailleY, positionZ), 
+               G3Xpoint(positionX, positionY, positionZ + tailleZ),
+               a, b);
+               
+  facets.push_back(&facet1);
+  facets.push_back(&facet2);
+  facets.push_back(&facet3);
+  facets.push_back(&facet4);
+  facets.push_back(&facet5);
+  facets.push_back(&facet6);
+  */ 
+
+
+  /* Grande face plane */
+  /*
+  positionX = 45;
+  positionY = 0;
+  positionZ = -5;
+  tailleX = 50;
+  tailleY = 50;
+
+  Facet facet8(G3Xpoint(positionX - tailleX, positionY + tailleY, 3*positionZ), 
+               G3Xpoint(positionX - tailleX, positionY - tailleY, positionZ),
+               G3Xpoint(positionX + tailleX, positionY + tailleY, positionZ), 
+               a, b);
+  
+  facets.push_back(&facet8);
+  */
+  
+  /* Cube */
+  //*
+  double taille = tailleX;
+
+
+  Facet facet9(G3Xpoint(positionX - taille, positionY + taille, positionZ + taille), 
+               G3Xpoint(positionX - taille, positionY - taille, positionZ + taille),
+               G3Xpoint(positionX + taille, positionY + taille, positionZ + taille), 
+               a, b);
+  
+  Facet facet10(G3Xpoint(positionX + taille, positionY + taille, positionZ + taille), 
+                G3Xpoint(positionX - taille, positionY - taille, positionZ + taille),
+                G3Xpoint(positionX + taille, positionY - taille, positionZ + taille), 
+                a, b);
+  
+  facets.push_back(&facet9);
+  facets.push_back(&facet10);
+  //*/
+
   return g3x_MainStart();
 }

@@ -17,6 +17,10 @@ PMat::PMat(const PMat& o):
   // Empty
 }
 
+const double PMat::getMas() const {
+  return _mass;
+}
+
 void PMat::setPos(G3Xpoint newPos) {
   _pos = newPos;
 }

@@ -23,18 +23,17 @@ Particle::Particle(double mass, G3Xpoint pos0, G3Xvector vit0):
 }
 
 void Particle::algo(void) {
-
   PMat::_vit += PMat::_frc * h * PMat::_mass;
   PMat::_pos += PMat::_vit * h;
-  
   PMat::_frc = NUL;
 }
 
 void Particle::draw(void) const {
-
+  /*
   glPushMatrix();
     glTranslatef(_pos[0], _pos[1], _pos[2]);
     g3x_Material(blue, ambi, diff, spec, shin, 1.);
     glutSolidSphere(.5, 10, 10);
   glPopMatrix();
+  */
 }

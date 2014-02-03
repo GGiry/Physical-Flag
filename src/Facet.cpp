@@ -6,135 +6,137 @@
 
 #include <GL/gl.h>
 
+#include <G3Xall.h>
+
+#define DEBUG (0)
+
 extern double h;
 
-// Produit scalaire
-// define G3Xprodscal(U,V)    ((U)[0]*(V)[0]+(U)[1]*(V)[1]+(U)[2]*(V)[2])
-double scalar(G3Xvector u, G3Xvector v) {
-  return u[0]*v[0] + u[1]*v[1] + u[2]*v[2];
+// Normal au plan contenant les points A, B et C
+G3Xvector computeNormal(G3Xpoint &A, G3Xpoint &B, G3Xpoint &C) {
+  G3Xvector ab(A, B);
+  G3Xvector bc(B, C);
+
+  return (ab * bc).normalize();
 }
 
-// Produit vectoriel
-G3Xvector dotProduct(G3Xpoint &A, G3Xpoint &B, G3Xpoint &C) {
-  double a,b,c;
-  a = (B[1] - A[1]) * (C[2] - A[2]) - (B[2] - A[2]) * (C[1] - A[1]);
-  b = (B[2] - A[2]) * (C[0] - A[0]) - (B[0] - A[0]) * (C[2] - A[2]);
-  c = (B[0] - A[0]) * (C[1] - A[1]) - (B[1] - A[1]) * (C[0] - A[0]);
-  return G3Xvector((const double) a, (const double) b, (const double) c);
+Facet::Facet(G3Xpoint A, G3Xpoint B, G3Xpoint C, double alpha, double beta): _A(A), _B(B), _C(C), _normal(computeNormal(A, B, C)), _alpha(alpha), _beta(beta) {
+
 }
 
-G3Xvector dotProduct(G3Xvector &u, G3Xvector &v) {
-  double a,b,c;
-  a = u[1] * v[2] - u[2] * v[1];
-  b = u[2] * v[0] - u[0] * v[2];
-  c = u[0] * v[1] - u[1] * v[0];
-  return G3Xvector((const double) a, (const double) b, (const double) c);
-}
-
-double sqrNorm(G3Xvector v) {
-  return v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
-}
-
-double norm(G3Xvector v) {
-  return sqrt(sqrNorm(v));
-}
-
-
-G3Xvector normalize(G3Xvector v) {
-  double l = norm(v);
-  
-  return G3Xvector(v[0] / l, v[1] / l, v[2] / l);
-}
-
-
-Facet::Facet(G3Xpoint A, G3Xpoint B, G3Xpoint C, double alpha, double beta): _A(A), _B(B), _C(C), _normal(normalize(dotProduct(A, B, C))), _alpha(alpha), _beta(beta) {
-  
-}
-
-
-G3Xvector createVector(G3Xpoint a, G3Xpoint p) {
-  return G3Xvector(p[0] - a[0], p[1] - a[1], p[2] - a[2]);
-}
-
-bool approxEqual( float a, float b, float tolerance )
-{
-    return abs( a - b ) < tolerance;
-}
-
-bool sameDir(G3Xvector a, G3Xvector b, float tolerance )
-{
-    G3Xvector aUnit = normalize(a);
-    G3Xvector bUnit = normalize(b);
-    return approxEqual( scalar(aUnit, bUnit), 1.0f, tolerance);
-}
-
+int sameDir(G3Xvector u, G3Xvector n, double e) {
+  if (u.scalar(n) < e) {
+    return -1;
+  }
+  return 1;
+} 
 
 void Facet::algo(PMat &part) {
+  
   G3Xpoint p = part.getPos();
-  G3Xvector v = part.getVit();
-  G3Xpoint q = p + v * h;
-  G3Xvector ap = createVector(_A, p);
-  G3Xvector pq = createVector(p, q);
+  G3Xvector ap(_A, p);
+  
+  if (DEBUG) {
+    std::cout << "Facette:" << std::endl;
+    std::cout << "P: " << p << std::endl; 
+  }
 
-  double e = 0.000001;
+  double e = 0.00000001;
 
-  double nap = scalar(_normal, ap);
+  double nap = _normal.scalar(ap);
   if (nap < e) {
+    if (DEBUG) {
+      std::cout << "Masse au dessous de la facette: " << nap << std::endl;
+    }
     return;
   }
-  
-  double npq = scalar(_normal, pq);
-  if (npq > e) {
+
+  G3Xvector v = part.getVit();
+  G3Xvector f = part.getFrc();
+  // On intègre aussi les forces qui s'appliquent à la particule
+  G3Xpoint q = p + h * (v + f * h * part.getMas());
+  G3Xvector pq(p, q);
+  if (DEBUG) {
+    std::cout << "Q: " << q << std::endl; 
+  }
+
+  double npq = _normal.scalar(pq);
+  if (npq >= 0) {
+    if (DEBUG) {
+      std::cout << "Masse ne se dirige pas vers" << std::endl;
+    }
     return;
   }
   
   double u = - nap / npq;
-  if (u > 1 || u < 0) {
-    return;
-  }
-
-  G3Xpoint m = p + pq * u;
-
-  G3Xvector ma = createVector(m, _A);
-  G3Xvector mb = createVector(m, _B);
-  G3Xvector mc = createVector(m, _C);
-
-  G3Xvector mamb = dotProduct(ma, mb);
-  G3Xvector mbmc = dotProduct(mb, mc);
-  G3Xvector mcma = dotProduct(mc, ma);
-
-  if (!(sameDir(mamb, mbmc, 0.0001) && sameDir(mamb, mcma, 0.0001))) {
+  if (u > 1) {
+    if (DEBUG) {
+      std::cout << "Q au dessus de la facette" << std::endl;
+    }
     return;
   }
   
-  G3Xvector f = part.getFrc();
-  G3Xvector fn = _normal * scalar(f, _normal);
+  G3Xpoint m = p + u * pq;
+
+  if (DEBUG) {
+    std::cout << "M: " << m << std::endl;
+  }
+
+  G3Xvector ma(m, _A);
+  G3Xvector mb(m, _B);
+  G3Xvector mc(m, _C);
+
+  G3Xvector mamb = ma * mb;
+  G3Xvector mbmc = mb * mc;
+  G3Xvector mcma = mc * ma;
+
+  double ep = 0.000001;
+
+  int dirMAMB = sameDir(mamb, _normal, ep);
+
+  if ((dirMAMB != sameDir(mbmc, _normal, ep)) || (dirMAMB != sameDir(mcma, _normal, ep))) {
+    if (DEBUG) {
+      std::cout << "M n'appartient pas a [ABC]" << std::endl;
+    }
+    return;
+  }
+
+  G3Xvector fn = _normal * f.scalar(_normal);
   G3Xvector ft = f - fn;
-  
-  G3Xvector vn = _normal * scalar(v, _normal);
+
+  G3Xvector vn = _normal * v.scalar(_normal);
   G3Xvector vt = v - vn;
+
+  double normFt = ft.norm();
+  double normFn = fn.norm();
+
+  double normVt = vt.norm();
+  double normVn = vn.norm();
   
-  double normFt = norm(ft);
-  double normFn = norm(fn);
-  
-  double normVt = norm(vt);
-  double normVn = norm(vn);
-  
-  if (normFt < _beta * normFn) {
-    f = fn * (-_alpha);
+  G3Xvector fCpy(f);
+  G3Xvector vCpy(v);
+
+  if (normFt - _beta * normFn < e) {
+    f = -_alpha * fn;
   } else {
-    f = fn * (-_alpha) + ft * (1 - _beta * normFn / normFt);
+    f = -_alpha * fn + (1 - _beta * normFn / normFt) * ft;
   }
-  
-  if (normVt < _beta * normVn) {
-    v = vn * (-_alpha);
+
+  if (normVt - _beta * normVn < e) {
+    v = -_alpha * vn;
   } else {
-    v = vn * (-_alpha) + vt * (1 - _beta * normFn / normFt);
+    v = -_alpha * vn + (1 - _beta * normVn / normVt) * vt;
   }
   
   part.setFrc(f);
   part.setVit(v);
-  
+
+  if (DEBUG) {
+    std::cout << "F   : " << fCpy << std::endl;
+    std::cout << "Fnew: " << f << std::endl;
+    std::cout << "V   : " << vCpy << std::endl;
+    std::cout << "Vnew: " << v << std::endl;
+  }
 
   return;
 }

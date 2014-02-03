@@ -14,9 +14,12 @@ class PMat {
   public:
     PMat();
     PMat(const PMat&);
+    
+    const double getMas() const;
     const G3Xpoint& getPos() const;
     const G3Xvector& getVit() const;
     const G3Xvector& getFrc() const;
+    
     void setPos(G3Xpoint);
     void setVit(G3Xvector& v) {
       _vit = v;
