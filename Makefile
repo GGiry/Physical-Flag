@@ -14,13 +14,15 @@ else               #en mode normal
   CFLAGS = -O2 -ansi
 endif
 
+export LD_LIBRARY_PATH=$G3XPP_PATH:$LD_LIBRARY_PATH
+
 # assemblage des infos de lib. et inc.
-lib = $(libG3X) $(libG3XPP)
+lib = $(libG3X) -L./lib/libg3x++ -lg3x++
 # fichiers *.c locaux
 src = src/
 Inc = include/
 # fichiers *.h locaux et lib.
-inc = -I./include $(incG3X) $(incG3XPP)
+inc = -I./include $(incG3X) -I./lib/libg3x++/include
 
 exec = main
 
